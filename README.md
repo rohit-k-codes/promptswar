@@ -1,6 +1,8 @@
 # Explore City
 > **Less Survival Mode. More Adventure.**
 
+![Explore City Platform](public/hero.jpg)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.x-cyan.svg)](https://react.dev/)
