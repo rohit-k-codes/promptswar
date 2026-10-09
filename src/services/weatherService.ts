@@ -1,81 +1,53 @@
 import { WeatherData } from '../types';
 
-export const OPENWEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY || '';
+export const OPENWEATHER_API_KEY = ''; // Zero Weather API keys required; uses Open-Meteo
 
-export async function fetchCurrentWeather(city: string = 'San Francisco, CA'): Promise<WeatherData> {
-  // If actual Weather API key configured:
-  if (OPENWEATHER_API_KEY && OPENWEATHER_API_KEY !== 'your-weather-api-key') {
-    try {
-      const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${OPENWEATHER_API_KEY}&units=metric`);
-      if (res.ok) {
-        const data = await res.json();
-        const tempC = Math.round(data.main.temp);
-        const tempF = Math.round((tempC * 9) / 5 + 32);
-        const condition = data.weather[0]?.main || 'Clear';
-        const rainProb = data.clouds?.all || 10;
-        
-        let outdoorScore = 90;
-        if (rainProb > 50) outdoorScore -= 35;
-        if (tempC < 10 || tempC > 32) outdoorScore -= 20;
-
-        return {
-          city: data.name || city,
-          temp_c: tempC,
-          temp_f: tempF,
-          condition: data.weather[0]?.description || condition,
-          icon: `https://openweathermap.org/img/wn/${data.weather[0]?.icon}@2x.png`,
-          humidity: data.main.humidity,
-          wind_kph: Math.round(data.wind.speed * 3.6),
-          uv_index: 5,
-          air_quality: 'Good',
-          rain_probability: rainProb,
-          outdoor_score: Math.max(10, outdoorScore),
-          recommendation: getRecommendation(tempC, rainProb),
-          last_updated: new Date().toISOString(),
-          data_source: 'official_feed',
-        };
-      }
-    } catch {
-      // Fallback on network or API failure
+export async function fetchCurrentWeather(city: string = 'Pune, Maharashtra'): Promise<WeatherData> {
+  try {
+    const res = await fetch(`/api/weather/current?city=${encodeURIComponent(city)}`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        city: data.city || 'Pune, Maharashtra, India',
+        temp_c: data.temp_c ?? 28,
+        temp_f: data.temp_f ?? 82,
+        condition: data.condition || 'Pleasant Deccan Breeze',
+        icon: data.icon || '🌤️',
+        humidity: data.humidity ?? 55,
+        wind_kph: data.wind_kph ?? 12,
+        uv_index: data.uv_index ?? 6,
+        air_quality: data.air_quality || 'Moderate (Deccan Plateau)',
+        rain_probability: data.rain_probability ?? 10,
+        outdoor_score: data.outdoor_score ?? 90,
+        recommendation: data.recommendation || 'Pleasant weather for Pune heritage and culinary walkabouts.',
+        last_updated: data.last_updated || new Date().toISOString(),
+        data_source: data.data_source || 'open_meteo_keyless',
+      };
     }
+  } catch (err) {
+    console.warn('[Weather API fetch error, using Pune climatological fallback]:', err);
   }
 
-  // Realistic dynamic coastal weather model for San Francisco
+  // Realistic dynamic Pune Deccan climate model
   const now = new Date();
   const hour = now.getHours();
-  // Coastal microclimate simulation: warmer mid-day, brisk morning & evening
-  const baseTempC = hour >= 11 && hour <= 16 ? 19 : hour >= 17 && hour <= 21 ? 16 : 13;
+  const baseTempC = hour >= 12 && hour <= 16 ? 31 : hour >= 17 && hour <= 21 ? 26 : 22;
   const tempF = Math.round((baseTempC * 9) / 5 + 32);
-  const rainProb = 12;
-  const outdoorScore = 92;
 
   return {
-    city: 'San Francisco, CA',
+    city: 'Pune, Maharashtra, India',
     temp_c: baseTempC,
     temp_f: tempF,
-    condition: hour < 10 ? 'Morning Coastal Fog clearing to Sun' : 'Brisk Coastal Sunshine',
-    icon: hour < 10 ? '🌫️' : '🌤️',
-    humidity: 68,
-    wind_kph: 18,
+    condition: hour < 10 ? 'Crisp Deccan Morning' : hour > 18 ? 'Cool Evening Breeze' : 'Sunny Deccan Skies',
+    icon: hour < 10 ? '🌅' : hour > 18 ? '🌙' : '☀️',
+    humidity: 52,
+    wind_kph: 14,
     uv_index: 6,
-    air_quality: 'Good',
-    rain_probability: rainProb,
-    outdoor_score: outdoorScore,
-    recommendation: 'Exceptional walking weather. Light layer advised for waterfront breezes.',
+    air_quality: 'Moderate (Pune Central)',
+    rain_probability: 12,
+    outdoor_score: 88,
+    recommendation: 'Prime Pune exploration window: Pleasant Deccan weather ideal for FC Road and heritage sites.',
     last_updated: new Date().toISOString(),
-    data_source: OPENWEATHER_API_KEY ? 'official_feed' : 'demo_fallback',
+    data_source: 'pune_climatological_model',
   };
-}
-
-function getRecommendation(tempC: number, rainProb: number): string {
-  if (rainProb > 60) {
-    return 'Rain expected: Prioritize indoor heritage museums, heated cafes, and covered market halls.';
-  }
-  if (tempC < 12) {
-    return 'Chilly urban breeze: Layer up with a windbreaker; great for hot sourdough stops and cafes.';
-  }
-  if (tempC > 26) {
-    return 'Warm sunshine: Stay hydrated, seek shaded park vistas and waterfront breezes.';
-  }
-  return 'Prime exploration window: Ideal for hill vistas, scenic streetcar rides, and pedestrian promenades.';
 }

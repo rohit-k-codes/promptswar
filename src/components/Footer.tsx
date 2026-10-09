@@ -25,17 +25,17 @@ export const Footer: React.FC = () => {
         {/* Data Provenance Notice */}
         <div className="text-center md:text-left max-w-md">
           <p className="text-[11px] leading-relaxed text-slate-400">
-            Evidence-based urban decision support. Sourced via Google Maps Platform, municipal feeds, and moderated citizen reports.
+            Evidence-based urban decision support for Pune, Maharashtra. Sourced via OpenStreetMap, verified local heritage archives, and community observations.
           </p>
         </div>
 
         {/* Stack & License */}
         <div className="text-center md:text-right">
           <p className="text-[11px] text-slate-400">
-            Built with React, TypeScript, Tailwind CSS, Supabase & Gemini AI
+            Built with React, TypeScript, Tailwind CSS, Leaflet & Gemini 3.8 Flash AI
           </p>
           <p className="text-[10px] text-slate-500 mt-0.5">
-            © 2026 Explore City · Hackathon Edition
+            © 2026 Explore City · Pune Edition · Single Gemini API Key Architecture
           </p>
         </div>
 

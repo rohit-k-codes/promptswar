@@ -6,7 +6,11 @@ import {
   Bookmark, 
   MapPin, 
   ShieldCheck, 
-  ArrowRight
+  ArrowRight,
+  Check,
+  AlertTriangle,
+  IndianRupee,
+  Clock
 } from 'lucide-react';
 import { BudgetTier, Itinerary, WeatherData } from '../types';
 import { generateAITripPlan } from '../services/geminiService';
@@ -22,9 +26,10 @@ export const TripPlannerView: React.FC<Props> = ({
   onSaveItinerary,
   isSaved,
 }) => {
-  const [destination, setDestination] = useState('San Francisco, CA');
+  const [destination, setDestination] = useState('Pune, Maharashtra');
   const [durationHours, setDurationHours] = useState(6);
   const [budgetTier, setBudgetTier] = useState<BudgetTier>('moderate');
+  const [budgetInr, setBudgetInr] = useState<number>(1500);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([
     'heritage',
     'local_food',
@@ -36,26 +41,54 @@ export const TripPlannerView: React.FC<Props> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentItinerary, setCurrentItinerary] = useState<Itinerary | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedFoodPreferences, setSelectedFoodPreferences] = useState<string[]>([
+    'irani_chai',
+    'puneri_misal'
+  ]);
+  const [selectedTravelStyle, setSelectedTravelStyle] = useState<string>('relaxed');
 
   const interestOptions = [
-    { id: 'heritage', label: '🏛️ Heritage & History' },
-    { id: 'local_food', label: '🥐 Local Food & Bakeries' },
-    { id: 'scenic_walk', label: '🌊 Waterfront Promenades' },
-    { id: 'art', label: '🎨 Street Art & Murals' },
-    { id: 'viewpoints', label: '🌄 Skyline Hill Vistas' },
-    { id: 'hidden_gems', label: '🔍 Secret Rooftops' },
-    { id: 'nightlife', label: '🍸 Evening Lounges' },
+    { id: 'heritage', label: '🏛️ Peshwa Heritage & Forts' },
+    { id: 'local_food', label: '🍛 Iconic Puneri Food Trails' },
+    { id: 'scenic_walk', label: '🌿 Koregaon Park & Zen Gardens' },
+    { id: 'art', label: '🎨 Kelkar Museum & Antiques' },
+    { id: 'viewpoints', label: '🌄 Vetal Tekdi & Parvati Hills' },
+    { id: 'college_katta', label: '☕ FC Road College Katta & Chai' },
+    { id: 'peth_culture', label: '🏮 Historic Peth Bazaars' },
+  ];
+
+  const foodOptions = [
+    { id: 'irani_chai', label: '☕ Bun Maska & Irani Chai (Goodluck)' },
+    { id: 'puneri_misal', label: '🌶️ Authentic Puneri Misal (Bedekar/Katakirr)' },
+    { id: 'spdp_dosa', label: '🥞 SPDP & Filter Coffee (Vaishali)' },
+    { id: 'shrewsbury', label: '🍪 Shrewsbury Biscuits & Mawa Cake (Kayani)' },
+    { id: 'mastani_shake', label: '🍨 Royal Mastani Ice Cream (Sujata)' },
+    { id: 'maharashtrian_thali', label: '🍱 Authentic Maharashtrian Thali' },
+  ];
+
+  const travelStyleOptions = [
+    { id: 'relaxed', label: '🌿 Relaxed & Leisurely', desc: 'Unhurried pace, ample Irani cafe rest stops' },
+    { id: 'high_tempo', label: '⚡ High-Tempo Discovery', desc: 'Maximum historical forts & monuments' },
+    { id: 'hidden_gems', label: '🕵️ Hidden-Gem Seeker', desc: 'Subterranean caves & 8th-century basalt' },
+    { id: 'budget_backpacker', label: '🎒 Budget Backpacker', desc: 'Walkable FC Road corridors & free parks' },
   ];
 
   const accessibilityOptions = [
     { id: 'step_free_options', label: '♿ Step-Free / Wheelchair Ramps' },
-    { id: 'shaded_rest_stops', label: '🌳 Shaded Benches & Rest Stops' },
-    { id: 'transit_accessible', label: '🚊 Direct Transit / Elevator Access' },
-    { id: 'quiet_zones', label: '🎧 Low Noise / Sensory Friendly' },
+    { id: 'shaded_rest_stops', label: '🌳 Shaded Benches & Green Corridors' },
+    { id: 'transit_accessible', label: '🚊 Near Pune Metro / PMPML Station' },
+    { id: 'quiet_zones', label: '🎧 Low Noise / Tranquil Zen Zones' },
   ];
 
   const toggleInterest = (id: string) => {
     setSelectedInterests(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleFoodPreference = (id: string) => {
+    setSelectedFoodPreferences(prev => 
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
@@ -73,8 +106,11 @@ export const TripPlannerView: React.FC<Props> = ({
       const plan = await generateAITripPlan({
         destination,
         durationHours,
+        budgetInr,
         budgetTier,
         interests: selectedInterests,
+        foodPreferences: selectedFoodPreferences,
+        travelStyle: selectedTravelStyle,
         accessibilityOptions: selectedAccessibility,
         weather,
       });
@@ -84,10 +120,11 @@ export const TripPlannerView: React.FC<Props> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleConfirmSave = () => {
     if (currentItinerary) {
       onSaveItinerary(currentItinerary);
       setSaveSuccess(true);
+      setShowConfirmModal(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
   };
@@ -106,10 +143,10 @@ export const TripPlannerView: React.FC<Props> = ({
               <span>Gemini 3.8 Flash Neural Itinerary Engine</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
-              AI Urban Adventure Planner
+              Pune AI Adventure Planner
             </h1>
             <p className="text-sm sm:text-base text-slate-300 max-w-2xl mt-1.5 leading-relaxed">
-              Curate an authentic day in the city calibrated for your budget, mobility preferences, and live coastal weather. No tourist traps. Zero survival anxiety.
+              Curate an authentic day in Pune calibrated for your INR budget, mobility preferences, and live Deccan weather. Grounded in real Pune places. Zero paid APIs.
             </p>
           </div>
 
@@ -119,7 +156,7 @@ export const TripPlannerView: React.FC<Props> = ({
               {weather.icon}
             </div>
             <div>
-              <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Live City Weather</p>
+              <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Live Pune Weather</p>
               <p className="text-lg font-bold text-white mt-0.5">{weather.temp_c}°C / {weather.temp_f}°F</p>
               <p className="text-xs text-emerald-400 font-medium">{weather.condition}</p>
             </div>
@@ -145,7 +182,7 @@ export const TripPlannerView: React.FC<Props> = ({
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                  placeholder="e.g. San Francisco, CA"
+                  placeholder="e.g. Pune, Maharashtra"
                 />
               </div>
             </div>
@@ -176,31 +213,48 @@ export const TripPlannerView: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Budget Tier Buttons */}
+            {/* Target Budget in INR */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                Budget Calibration
+                Target Budget (INR ₹)
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 mb-2">
                 {[
-                  { id: 'budget' as const, label: 'Budget', sub: '$' },
-                  { id: 'moderate' as const, label: 'Standard', sub: '$$' },
-                  { id: 'luxury' as const, label: 'Premium', sub: '$$$$' },
-                  { id: 'flexible' as const, label: 'Free Spirit', sub: '∞' },
-                ].map((tier) => (
+                  { amount: 500, label: '₹500', tier: 'budget' as const },
+                  { amount: 1500, label: '₹1,500', tier: 'moderate' as const },
+                  { amount: 3500, label: '₹3,500', tier: 'luxury' as const },
+                  { amount: 6000, label: '₹6,000+', tier: 'flexible' as const },
+                ].map((b) => (
                   <button
-                    key={tier.id}
-                    onClick={() => setBudgetTier(tier.id)}
+                    key={b.amount}
+                    type="button"
+                    onClick={() => {
+                      setBudgetInr(b.amount);
+                      setBudgetTier(b.tier);
+                    }}
                     className={`p-2.5 rounded-xl text-center border transition-all ${
-                      budgetTier === tier.id
+                      budgetInr === b.amount
                         ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-glow-amber'
                         : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700'
                     }`}
                   >
-                    <p className="text-xs leading-none">{tier.label}</p>
-                    <p className="text-[11px] font-mono opacity-80 mt-1">{tier.sub}</p>
+                    <p className="text-xs font-mono font-bold">{b.label}</p>
+                    <p className="text-[10px] opacity-75 capitalize">{b.tier}</p>
                   </button>
                 ))}
+              </div>
+              <div className="relative">
+                <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="number"
+                  min="200"
+                  max="50000"
+                  step="100"
+                  value={budgetInr}
+                  onChange={(e) => setBudgetInr(Math.max(100, Number(e.target.value)))}
+                  className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                  placeholder="Custom INR budget"
+                />
               </div>
             </div>
 
@@ -221,6 +275,53 @@ export const TripPlannerView: React.FC<Props> = ({
                     }`}
                   >
                     {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Food Preferences Chips */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Pune Food & Specialties
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {foodOptions.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => toggleFoodPreference(f.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      selectedFoodPreferences.includes(f.id)
+                        ? 'bg-amber-500/25 text-amber-300 border-amber-500/60 font-bold'
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Travel Style Selector */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Exploration & Travel Style
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {travelStyleOptions.map((style) => (
+                  <button
+                    key={style.id}
+                    type="button"
+                    onClick={() => setSelectedTravelStyle(style.id)}
+                    className={`p-2.5 rounded-xl text-left border transition-all ${
+                      selectedTravelStyle === style.id
+                        ? 'bg-cyan-500/20 text-cyan-200 border-cyan-500/50 font-bold'
+                        : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <p className="text-xs leading-snug">{style.label}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{style.desc}</p>
                   </button>
                 ))}
               </div>
@@ -258,12 +359,12 @@ export const TripPlannerView: React.FC<Props> = ({
               {isGenerating ? (
                 <>
                   <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                  <span>Synthesizing Tailored Adventure...</span>
+                  <span>Synthesizing Pune Adventure via Gemini...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 fill-current" />
-                  <span>Generate AI Itinerary</span>
+                  <span>Generate Pune AI Itinerary</span>
                 </>
               )}
             </button>
@@ -281,11 +382,11 @@ export const TripPlannerView: React.FC<Props> = ({
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      {currentItinerary.duration_hours} Hours Odyssey
+                      {currentItinerary.duration_hours} Hours Exploration
                     </span>
                     <span className="text-xs text-slate-400">·</span>
-                    <span className="text-xs text-emerald-400 font-semibold">
-                      Estimated Cost: ${currentItinerary.estimated_cost}
+                    <span className="text-xs text-emerald-400 font-semibold font-mono">
+                      Target Budget: ₹{currentItinerary.estimated_cost} INR
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
@@ -299,7 +400,7 @@ export const TripPlannerView: React.FC<Props> = ({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleSave}
+                    onClick={() => setShowConfirmModal(true)}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
                       saveSuccess || isSaved(currentItinerary.id)
                         ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50'
@@ -307,7 +408,7 @@ export const TripPlannerView: React.FC<Props> = ({
                     }`}
                   >
                     <Bookmark className="w-3.5 h-3.5" />
-                    <span>{saveSuccess || isSaved(currentItinerary.id) ? 'Saved' : 'Save Plan'}</span>
+                    <span>{saveSuccess || isSaved(currentItinerary.id) ? 'Saved Locally' : 'Review & Save'}</span>
                   </button>
                 </div>
               </div>
@@ -371,7 +472,7 @@ export const TripPlannerView: React.FC<Props> = ({
                       {step.safety_tip && (
                         <div className="flex items-start gap-2 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300">
                           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                          <span><strong className="text-emerald-400">Safety Tip:</strong> {step.safety_tip}</span>
+                          <span><strong className="text-emerald-400">Pune Tip:</strong> {step.safety_tip}</span>
                         </div>
                       )}
 
@@ -386,15 +487,15 @@ export const TripPlannerView: React.FC<Props> = ({
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-400">
                 <Compass className="w-8 h-8 animate-pulse-slow" />
               </div>
-              <h3 className="text-lg font-bold text-white">Your Itinerary Awaits</h3>
+              <h3 className="text-lg font-bold text-white">Your Pune Adventure Awaits</h3>
               <p className="text-xs text-slate-400 max-w-sm mt-1 mb-6 leading-relaxed">
-                Configure your exploration duration, interests, and budget preferences on the left to synthesize an adaptive city adventure plan.
+                Configure your exploration duration, interests, and INR budget preferences on the left to synthesize a genuine Pune itinerary.
               </p>
               <button
                 onClick={handleGenerate}
                 className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-glow-amber hover:opacity-90 transition-all flex items-center gap-2"
               >
-                <span>Generate Default SF Odyssey</span>
+                <span>Generate Pune Heritage &amp; Food Odyssey</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -402,6 +503,40 @@ export const TripPlannerView: React.FC<Props> = ({
         </div>
 
       </div>
+
+      {/* Explicit User Review & Confirmation Modal before saving locally */}
+      {showConfirmModal && currentItinerary && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="max-w-md w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Bookmark className="w-5 h-5" />
+              <h3 className="text-base font-bold text-white">Confirm Saving Itinerary</h3>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              You are about to save <strong>"{currentItinerary.title}"</strong> ({currentItinerary.schedule.length} stops) to your local browser storage.
+            </p>
+            <div className="p-3 bg-slate-800/80 rounded-xl text-[11px] text-slate-400 space-y-1">
+              <p>• Destination: Pune, Maharashtra</p>
+              <p>• Estimated Budget: ₹{currentItinerary.estimated_cost} INR</p>
+              <p>• Saved locally in this browser. No external cloud transmission.</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSave}
+                className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-glow-amber hover:bg-amber-400 transition"
+              >
+                Confirm &amp; Save Locally
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

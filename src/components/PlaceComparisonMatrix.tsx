@@ -8,7 +8,8 @@ import {
   ShieldCheck, 
   Footprints, 
   Accessibility, 
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react';
 
 interface Props {
@@ -29,6 +30,7 @@ export const PlaceComparisonMatrix: React.FC<Props> = ({
   // Compute best scores among compared places for dynamic highlights
   const highestRating = Math.max(...comparisonPlaces.map(p => p.rating), 0);
   const highestSafety = Math.max(...comparisonPlaces.map(p => p.safety_score), 0);
+  const highestCleanliness = Math.max(...comparisonPlaces.map(p => p.cleanliness_score), 0);
   const highestWalkability = Math.max(...comparisonPlaces.map(p => p.walkability_score), 0);
   const highestAccessibility = Math.max(...comparisonPlaces.map(p => p.accessibility_rating), 0);
 
@@ -184,6 +186,23 @@ export const PlaceComparisonMatrix: React.FC<Props> = ({
                       {place.safety_score === highestSafety && comparisonPlaces.length > 1 && (
                         <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-extrabold uppercase">
                           Safest
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Cleanliness Score Metric */}
+                    <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Cleanliness & Sanitation</p>
+                        <p className="text-sm font-bold text-teal-400 mt-0.5 flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>{place.cleanliness_score} / 10</span>
+                        </p>
+                        <p className="text-[9px] text-slate-500">Public amenity maintenance</p>
+                      </div>
+                      {place.cleanliness_score === highestCleanliness && comparisonPlaces.length > 1 && (
+                        <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/40 text-[10px] font-extrabold uppercase">
+                          Cleanest
                         </span>
                       )}
                     </div>

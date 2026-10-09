@@ -18,6 +18,10 @@ export type DataSourceType =
   | 'official_feed' 
   | 'citizen_community' 
   | 'municipal_sensor' 
+  | 'pune_verified_local_database'
+  | 'pune_urban_transit_model'
+  | 'pune_climatological_model'
+  | 'open_meteo_keyless'
   | 'demo_fallback';
 
 export interface Place {
@@ -39,6 +43,7 @@ export interface Place {
   website?: string;
   tags?: string[];
   safety_score: number; // 1-10
+  cleanliness_score: number; // 1-10
   crowd_density: 'low' | 'moderate' | 'busy' | 'packed';
   walkability_score: number; // 1-10
   accessibility_rating: number; // 1-10
@@ -120,11 +125,16 @@ export interface Itinerary {
   budget_tier: BudgetTier;
   duration_hours: number;
   interests: string[];
+  food_preferences?: string[];
+  travel_style?: string;
   accessibility_options: string[];
   weather_context?: WeatherContext;
+  weather_considerations?: string;
   schedule: ItineraryStep[];
   estimated_cost: number;
-  is_public: boolean;
+  currency?: string;
+  data_source?: DataSourceType;
+  is_public?: boolean;
   created_at: string;
 }
 
@@ -137,7 +147,7 @@ export interface WeatherData {
   humidity: number;
   wind_kph: number;
   uv_index: number;
-  air_quality: 'Good' | 'Moderate' | 'Unhealthy for Sensitive' | 'Unhealthy';
+  air_quality: string;
   rain_probability: number;
   outdoor_score: number; // 0-100
   recommendation: string;
@@ -172,3 +182,15 @@ export interface SavedPlace {
   notes?: string;
   created_at: string;
 }
+
+export type NavigationPage = 
+  | 'home' 
+  | 'explore' 
+  | 'places' 
+  | 'planner' 
+  | 'compare' 
+  | 'reports' 
+  | 'insights' 
+  | 'saved' 
+  | 'profile' 
+  | 'admin';

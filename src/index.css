@@ -1,3 +1,5 @@
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -115,4 +117,31 @@
   position: absolute;
   border-radius: 9999px;
   animation: radar-pulse 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Leaflet Dark Glass Customization */
+.leaflet-container {
+  background: #0b1120 !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(17, 24, 39, 0.95) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(17, 24, 39, 0.95) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #f59e0b !important;
 }

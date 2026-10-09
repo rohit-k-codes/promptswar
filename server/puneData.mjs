@@ -1,16 +1,17 @@
-import type { Place, PlaceCategory } from '../types';
+/**
+ * Explore City — Pune Edition
+ * Authentic Curated Places Database for Pune, Maharashtra, India
+ * Coordinates center: 18.5204° N, 73.8567° E
+ */
 
-export const isGoogleMapsConfigured = false; // Keyless Leaflet + OpenStreetMap architecture
-
-export const DEFAULT_CITY = {
-  name: 'Pune, Maharashtra',
+export const PUNE_DEFAULT_CENTER = {
+  name: 'Pune, Maharashtra, India',
   lat: 18.5204,
   lng: 73.8567,
   zoom: 13,
 };
 
-// Curated authentic Pune Places with full sourced metadata
-export const CURATED_PLACES: Place[] = [
+export const PUNE_CURATED_PLACES = [
   {
     id: 'pune-place-001',
     place_id: 'ChIJ7Yw99rPBwjsR67c3Jv8uG1I',
@@ -33,7 +34,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'busy',
     walkability_score: 9.1,
     accessibility_rating: 8.2,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     notes: 'Historic 1732 seat of the Peshwa rulers of the Maratha Empire. Massive teak gates, courtyards, fountain foundations, and Delhi Darwaza.'
   },
@@ -59,7 +60,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'moderate',
     walkability_score: 9.4,
     accessibility_rating: 9.0,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
     notes: 'Majestic 1892 palace featuring Italian arches and expansive lawns where Mahatma Gandhi and Kasturba Gandhi were interned during the Quit India movement.'
   },
@@ -85,7 +86,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'packed',
     walkability_score: 9.6,
     accessibility_rating: 8.5,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
     notes: 'Legendary 1935 heritage Irani cafe at Goodluck Chowk. Celebrated for freshly baked bun maska dipped in steaming special Irani chai and mutton kheema.'
   },
@@ -111,7 +112,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'busy',
     walkability_score: 9.8,
     accessibility_rating: 8.8,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
     notes: 'The beating heart of student and cultural life on FC Road. Unmatched Sev Potato Dahi Puri (SPDP), crisp Mysore Sada dosa, and authentic South Indian filter kaapi.'
   },
@@ -137,7 +138,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'low',
     walkability_score: 9.2,
     accessibility_rating: 8.0,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
     notes: 'An 8th-century rock-cut monolithic temple carved directly out of a single basalt rock slab during the Rashtrakuta period, dedicated to Shiva and Nandi.'
   },
@@ -156,14 +157,14 @@ export const CURATED_PLACES: Place[] = [
     opening_hours: 'Open 24 Hours',
     is_open_now: true,
     phone: '+91 20 6767 5000',
-    website: 'https://marriott.com',
+    website: 'https://www.marriott.com/en-us/hotels/pnqrz-the-ritz-carlton-pune/',
     tags: ['Luxury Stay', 'Golf Course Vista', 'Rooftop Lounge', 'Yerawada'],
     safety_score: 9.9,
     cleanliness_score: 9.9,
     crowd_density: 'moderate',
     walkability_score: 8.5,
     accessibility_rating: 9.7,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
     notes: 'Ultra-luxury sanctuary featuring skyline terraces overlooking the 100-acre Poona Club Golf Course, Michelin-level dining, and tranquil wellness suites.'
   },
@@ -189,7 +190,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'busy',
     walkability_score: 8.9,
     accessibility_rating: 8.4,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
     notes: 'Beloved early morning breakfast staple near Pune Station. World famous for double-egg cheese omelettes loaded with butter and crispy brun maska.'
   },
@@ -215,7 +216,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'low',
     walkability_score: 9.8,
     accessibility_rating: 8.9,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
     notes: 'A celebrated 12-acre environmental project transforming a barren municipal nala into an exquisite Japanese-style Zen garden with bamboo arches, wooden bridges, and running water.'
   },
@@ -241,7 +242,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'busy',
     walkability_score: 9.3,
     accessibility_rating: 8.0,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 200).toISOString(),
     notes: 'The definitive temple of authentic Puneri sweet-and-spicy Misal with homemade poha, farsan, and simmering spicy kat broth. Served in the heritage heart of Old Pune.'
   },
@@ -267,7 +268,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'busy',
     walkability_score: 9.4,
     accessibility_rating: 8.7,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 220).toISOString(),
     notes: 'Historic Parsi bakery famed across India for its warm Mawa cakes and melt-in-mouth buttery Shrewsbury biscuits. Lines form outside before morning batch opening.'
   },
@@ -293,7 +294,7 @@ export const CURATED_PLACES: Place[] = [
     crowd_density: 'moderate',
     walkability_score: 9.0,
     accessibility_rating: 8.3,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
     notes: 'A collection of over 20,000 rare artifacts assembled by Dr. D.G. Kelkar, showcasing carved doorways, betel nut cutters, musical instruments, and a recreation of Mastani Mahal.'
   },
@@ -312,78 +313,15 @@ export const CURATED_PLACES: Place[] = [
     opening_hours: 'Open 24 Hours',
     is_open_now: true,
     phone: '+91 20 6745 6745',
-    website: 'https://conradpune.com',
+    website: 'https://www.hilton.com/en/hotels/pnqpcci-conrad-pune/',
     tags: ['Hilton Luxury', 'Art Deco', 'Koji Pan-Asian', 'Central Pune'],
     safety_score: 9.8,
     cleanliness_score: 9.8,
     crowd_density: 'moderate',
     walkability_score: 9.1,
     accessibility_rating: 9.6,
-    data_source: 'pune_verified_local_database',
+    data_source: 'demo_fallback',
     sourced_at: new Date(Date.now() - 1000 * 60 * 260).toISOString(),
     notes: 'Luxury hotel located in the heart of the central business and cultural district, renowned for Art Deco architecture and gourmet culinary destinations.'
   }
 ];
-
-export interface SearchPlacesParams {
-  query?: string;
-  category?: PlaceCategory | 'all';
-  lat?: number;
-  lng?: number;
-  radius?: number;
-}
-
-export async function searchPlaces(params: SearchPlacesParams = {}): Promise<Place[]> {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params.query) queryParams.set('query', params.query);
-    if (params.category && params.category !== 'all') queryParams.set('category', params.category);
-    if (params.lat != null) queryParams.set('lat', params.lat.toString());
-    if (params.lng != null) queryParams.set('lng', params.lng.toString());
-    if (params.radius != null) queryParams.set('radius', params.radius.toString());
-
-    const res = await fetch(`/api/places/search?${queryParams.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.places) && data.places.length > 0) {
-        return data.places;
-      }
-      if (Array.isArray(data.results) && data.results.length > 0) {
-        return data.results;
-      }
-    }
-  } catch (err) {
-    console.warn('[Places API Fetch Error, using local Pune curated list]:', err);
-  }
-
-  // Client-side fallback
-  let list = [...CURATED_PLACES];
-  if (params.category && params.category !== 'all') {
-    list = list.filter(p => p.category === params.category);
-  }
-  if (params.query && params.query.trim()) {
-    const q = params.query.toLowerCase().trim();
-    list = list.filter(p => 
-      p.name.toLowerCase().includes(q) || 
-      p.address.toLowerCase().includes(q) ||
-      p.notes?.toLowerCase().includes(q) ||
-      (p.tags || []).some(t => t.toLowerCase().includes(q))
-    );
-  }
-  return list;
-}
-
-export async function getPlaceDetails(placeId: string): Promise<Place | null> {
-  try {
-    const res = await fetch(`/api/places/details?placeId=${encodeURIComponent(placeId)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.place) return data.place;
-    }
-  } catch (err) {
-    console.warn('[Place Details API Error]:', err);
-  }
-
-  const local = CURATED_PLACES.find(p => p.id === placeId || p.place_id === placeId);
-  return local || null;
-}

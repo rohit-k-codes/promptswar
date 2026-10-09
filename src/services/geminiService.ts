@@ -1,254 +1,253 @@
-import { GoogleGenAI } from '@google/genai';
-import { BudgetTier, Itinerary, ItineraryStep, CitizenReport, WeatherData } from '../types';
-
-export const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-export const isGeminiConfigured = Boolean(
-  GEMINI_API_KEY && 
-  GEMINI_API_KEY !== 'your-gemini-api-key'
-);
-
-function getGeminiClient(): GoogleGenAI | null {
-  if (!isGeminiConfigured) return null;
-  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-}
+import { BudgetTier, Itinerary, ItineraryStep, WeatherData } from '../types';
+import { CreateReportInput } from './citizenReportService';
+import { CURATED_PLACES } from './placesService';
 
 export interface PlanTripParams {
   destination: string;
   durationHours: number;
+  budgetInr?: number;
   budgetTier: BudgetTier;
   interests: string[];
+  foodPreferences?: string[];
+  travelStyle?: string;
   accessibilityOptions: string[];
   weather: WeatherData;
 }
 
-export async function generateAITripPlan(params: PlanTripParams): Promise<Itinerary> {
-  const client = getGeminiClient();
-
-  if (client) {
-    try {
-      const prompt = `
-You are the city adventure intelligence engine for Explore City (Tagline: Less Survival Mode. More Adventure).
-Create a personalized, exciting, and accessible city exploration itinerary.
-
-Destination: ${params.destination}
-Duration: ${params.durationHours} hours
-Budget Tier: ${params.budgetTier}
-Interests: ${params.interests.join(', ') || 'Culture, Food, Hidden Gems'}
-Accessibility Needs: ${params.accessibilityOptions.join(', ') || 'Standard'}
-Current Weather Context: ${params.weather.temp_c}°C (${params.weather.temp_f}°F), ${params.weather.condition}, Rain Prob: ${params.weather.rain_probability}%, Recommendation: ${params.weather.recommendation}
-
-Respond ONLY with valid JSON conforming to this schema (no extra explanation, no markdown backticks):
-{
-  "title": "Short creative adventure title",
-  "estimated_cost": 45,
-  "schedule": [
-    {
-      "step": 1,
-      "time": "09:30 AM",
-      "title": "Stop title",
-      "location": "Specific place name & street",
-      "category": "Culinary / Heritage / Vista / etc",
-      "duration": "1 hr",
-      "cost_estimate": "$15",
-      "notes": "Practical local tip & what makes this special",
-      "safety_tip": "Specific transparent safety advice for this time/neighborhood"
-    }
-  ]
+export interface AssistantChatParams {
+  message: string;
+  history?: Array<{ role: 'user' | 'assistant'; text: string }>;
+  language?: 'en-IN' | 'hi-IN' | 'mr-IN';
+  currentTab?: string;
 }
-`;
 
-      const response = await client.interactions.create({
-        model: 'gemini-3.8-flash',
-        input: prompt,
-      });
+export interface AssistantChatResponse {
+  reply: string;
+  suggestedPrompts: string[];
+  action: {
+    type: 'none' | 'navigate' | 'filter_category' | 'search_places' | 'open_planner' | 'draft_report' | 'compare_places';
+    targetTab?: string;
+    payload?: any;
+  };
+  sources: Array<{ name: string; url: string }>;
+  language: string;
+  ai_model_used?: string;
+}
 
-      const text = response.output_text || '';
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleanJson);
+/**
+ * Generate AI Adventure Plan via secure backend Gemini proxy
+ */
+export async function generateAITripPlan(params: PlanTripParams): Promise<Itinerary> {
+  const budgetInr = params.budgetInr || (params.budgetTier === 'budget' ? 500 : params.budgetTier === 'luxury' ? 4500 : 1500);
 
-      return {
-        id: `itin-${Date.now()}`,
-        title: parsed.title || `${params.destination} Adventure`,
-        destination: params.destination,
-        budget_tier: params.budgetTier,
-        duration_hours: params.durationHours,
+  try {
+    const res = await fetch('/api/ai/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        destination: params.destination || 'Pune, Maharashtra',
+        durationHours: params.durationHours,
+        budgetInr,
+        budgetTier: params.budgetTier,
         interests: params.interests,
-        accessibility_options: params.accessibilityOptions,
-        weather_context: {
-          summary: `${params.weather.temp_c}°C, ${params.weather.condition}`,
-          temp_c: params.weather.temp_c,
-          condition: params.weather.condition,
-          recommendation: params.weather.recommendation,
-        },
-        schedule: parsed.schedule || [],
-        estimated_cost: parsed.estimated_cost || 40,
-        is_public: true,
-        created_at: new Date().toISOString(),
-      };
-    } catch (err) {
-      console.warn('Gemini live call error, falling back to local synthesis engine:', err);
+        foodPreferences: params.foodPreferences,
+        travelStyle: params.travelStyle,
+        accessibilityOptions: params.accessibilityOptions,
+        weather: params.weather,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.schedule)) {
+        return data;
+      }
     }
+  } catch (err) {
+    console.warn('[Backend AI Itinerary Proxy failed, generating locally]:', err);
   }
 
-  // High-fidelity local synthesis engine based on user parameters & weather
-  return synthesizeTripPlan(params);
+  // Local synthesis fallback
+  return generateLocalPuneItinerary(params, budgetInr);
 }
 
-function synthesizeTripPlan(params: PlanTripParams): Itinerary {
-  const steps: ItineraryStep[] = [];
-  const hours = params.durationHours;
+/**
+ * Local Pune Itinerary Generator (Offline Fallback)
+ */
+function generateLocalPuneItinerary(params: PlanTripParams, budgetInr: number): Itinerary {
+  const hours = params.durationHours || 4;
   const isBudget = params.budgetTier === 'budget';
-  const isLuxury = params.budgetTier === 'luxury';
   const hasStepFree = params.accessibilityOptions.includes('step_free');
 
-  let cost = isBudget ? 20 : isLuxury ? 135 : 48;
+  const steps: ItineraryStep[] = [];
 
-  // Step 1: Morning starter
+  // Stop 1
   steps.push({
     step: 1,
-    time: '09:30 AM',
-    title: 'Historic Ferry Building Sourdough & Specialty Roast',
-    location: '1 Ferry Building, The Embarcadero',
-    category: 'Culinary Heritage',
-    duration: '1.25 hrs',
-    cost_estimate: isBudget ? '$8' : isLuxury ? '$35' : '$16',
+    time: '08:30 AM',
+    title: 'Goodluck Cafe — Legendary Bun Maska & Special Irani Chai',
+    location: 'Goodluck Chowk, FC Road, Deccan Gymkhana, Pune',
+    category: 'Heritage Breakfast',
+    duration: '1 hr',
+    cost_estimate: isBudget ? '₹90' : '₹160',
     notes: hasStepFree 
-      ? 'Fully step-free waterfront promenade with wide access ramps and scenic bay vistas.' 
-      : 'Breathe in the ocean breeze and grab warm fresh sourdough while watching morning ferries dock.',
-    safety_tip: 'Consistently high foot traffic, prominent security, and wide pedestrian areas.'
+      ? 'Ground level seating available. Dip buttered bun maska into hot Irani chai.'
+      : 'Legendary 1935 cafe. Sit near the window to watch morning FC Road bustle.',
+    safety_tip: 'Busy morning traffic at Goodluck Chowk; use marked zebra crossings.'
   });
 
-  // Step 2: Mid-day culture or vista
+  // Stop 2
   if (hours >= 3) {
-    if (params.interests.includes('heritage') || params.interests.includes('art')) {
-      steps.push({
-        step: 2,
-        time: '11:15 AM',
-        title: 'Cable Car Museum & Active Mechanical Powerhouse',
-        location: '1201 Mason St (Nob Hill)',
-        category: 'Living Heritage',
-        duration: '1.5 hrs',
-        cost_estimate: 'Free Entry',
-        notes: 'Watch the four massive 14-foot subterranean winding wheels driving the iconic cable cars in real time.',
-        safety_tip: 'Steep hill incline on Mason St; boarding the cable car at Powell avoids uphill pedestrian walk.'
-      });
-    } else {
-      steps.push({
-        step: 2,
-        time: '11:15 AM',
-        title: 'Telegraph Hill Murals & Coit Tower Vista Deck',
-        location: '1 Telegraph Hill Blvd',
-        category: 'Historic Vista',
-        duration: '1.5 hrs',
-        cost_estimate: isBudget ? 'Free Grounds' : '$10 Elevator',
-        notes: 'Examine authentic 1934 Public Works of Art frescoes before sweeping 360-degree Golden Gate views.',
-        safety_tip: 'Keep personal belongings zipped on high observation decks during brisk winds.'
-      });
-    }
-  }
-
-  // Step 3: Lunch & neighborhood exploration
-  if (hours >= 5) {
     steps.push({
-      step: 3,
-      time: '01:30 PM',
-      title: 'Artisanal Mission Food Discovery & Tartine Bakery',
-      location: 'Valencia Corridor & 18th St',
-      category: 'Local Gastronomy',
+      step: 2,
+      time: '10:00 AM',
+      title: 'Shaniwar Wada — Historic Peshwa Citadel & Delhi Darwaza',
+      location: 'Bajirao Rd, Shaniwar Peth, Pune',
+      category: 'Living Maratha Heritage',
       duration: '1.5 hrs',
-      cost_estimate: isBudget ? '$12' : isLuxury ? '$65' : '$24',
-      notes: 'Sample world-famous morning buns or artisanal carnitas surrounded by vibrant mural-lined community corridors.',
-      safety_tip: 'Vibrant and populated daylight avenue; stick to main illuminated avenues after dusk.'
+      cost_estimate: '₹25 Entry',
+      notes: 'Epic 1732 palace fortress with fortified spiked gates and gardens.',
+      safety_tip: 'Historic stone courtyards have uneven steps; tread carefully.'
     });
   }
 
-  // Step 4: Afternoon relaxation
+  // Stop 3
+  if (hours >= 5) {
+    steps.push({
+      step: 3,
+      time: '12:30 PM',
+      title: 'Vaishali Restaurant — Iconic SPDP & Filter Coffee',
+      location: 'FC Road, Deccan Gymkhana, Pune',
+      category: 'Puneri Street Food & Lunch',
+      duration: '1.25 hrs',
+      cost_estimate: isBudget ? '₹180' : '₹320',
+      notes: 'Crisp Mysore Masala Dosa and unmatched Sev Potato Dahi Puri (SPDP).',
+      safety_tip: 'High afternoon student crowd on FC Road; keep belongings close.'
+    });
+  }
+
+  // Stop 4
   if (hours >= 7) {
     steps.push({
       step: 4,
-      time: '03:45 PM',
-      title: 'Golden Gate Park Conservatory & Botanical Meander',
-      location: '100 John F Kennedy Dr',
-      category: 'Nature & Architecture',
-      duration: '2 hrs',
-      cost_estimate: isBudget ? 'Free Park Grounds' : '$15 Glasshouse',
-      notes: 'Walk the car-free JFK promenade into the 1879 Victorian glass palace harboring exotic orchids.',
-      safety_tip: 'Stay on paved well-marked park corridors and respect designated bicycle lanes.'
+      time: '02:30 PM',
+      title: 'Aga Khan Palace & Gandhi Memorial',
+      location: 'Pune-Ahmednagar Rd, Kalyani Nagar, Pune',
+      category: 'Memorial & Serene Grounds',
+      duration: '1.75 hrs',
+      cost_estimate: '₹25 Entry',
+      notes: 'Italian arches and peaceful garden museum honoring freedom struggle leaders.',
+      safety_tip: 'Paved walkways with step-free accessibility across main museum corridors.'
     });
   }
 
   return {
     id: `itin-${Date.now()}`,
-    title: `${params.destination} Explorer: ${params.interests.join(' & ') || 'Hidden Gems'}`,
-    destination: params.destination,
+    title: `Pune Explorer: ${params.interests.join(' & ') || 'Heritage & Food Trail'}`,
+    destination: 'Pune, Maharashtra',
     budget_tier: params.budgetTier,
-    duration_hours: params.durationHours,
+    duration_hours: hours,
     interests: params.interests,
-    accessibility_options: params.accessibilityOptions,
+    food_preferences: params.foodPreferences || [],
+    travel_style: params.travelStyle || 'Balanced Explorer',
+    accessibility_options: params.accessibilityOptions || [],
     weather_context: {
       summary: `${params.weather.temp_c}°C, ${params.weather.condition}`,
       temp_c: params.weather.temp_c,
       condition: params.weather.condition,
       recommendation: params.weather.recommendation,
     },
+    weather_considerations: 'Structured around pleasant morning and afternoon exploration intervals.',
     schedule: steps,
-    estimated_cost: cost,
-    is_public: true,
+    estimated_cost: isBudget ? 300 : 850,
+    currency: 'INR',
+    data_source: 'pune_verified_local_database',
     created_at: new Date().toISOString(),
   };
 }
 
-export async function analyzeCitizenReportAI(report: Partial<CitizenReport>): Promise<{
+/**
+ * Analyze citizen report via backend Gemini proxy
+ */
+export async function analyzeCitizenReportAI(input: CreateReportInput): Promise<{
   suggestedSeverity: 'low' | 'medium' | 'high' | 'critical';
   confidenceBoost: number;
   safetySummary: string;
-  isPotentialDuplicate: boolean;
+  isPotentialDuplicate?: boolean;
+  verificationNotice: string;
 }> {
-  const client = getGeminiClient();
+  try {
+    const res = await fetch('/api/ai/analyze-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
 
-  if (client) {
-    try {
-      const prompt = `
-Analyze this citizen report for city municipal and exploration intelligence:
-Title: ${report.title}
-Description: ${report.description}
-Category: ${report.category}
-Location: ${report.address || `${report.lat}, ${report.lng}`}
-
-Respond ONLY with valid JSON:
-{
-  "suggestedSeverity": "low" | "medium" | "high" | "critical",
-  "confidenceBoost": 5 to 20,
-  "safetySummary": "One crisp sentence explaining safety impact for pedestrians and explorers",
-  "isPotentialDuplicate": false
-}
-`;
-      const res = await client.interactions.create({
-        model: 'gemini-3.8-flash',
-        input: prompt,
-      });
-
-      const text = res.output_text || '';
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson);
-    } catch {
-      // fallback
+    if (res.ok) {
+      const data = await res.json();
+      return data;
     }
+  } catch (err) {
+    console.warn('[Backend Report AI Analysis failed, using local rule engine]:', err);
   }
 
-  // Local fallback heuristic
-  const text = `${report.title} ${report.description}`.toLowerCase();
+  // Fallback rule engine
+  const text = `${input.title} ${input.description}`.toLowerCase();
   let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
-  if (text.includes('urgent') || text.includes('hazard') || text.includes('deep pothole') || text.includes('broken glass')) {
+  if (text.includes('urgent') || text.includes('waterlogging') || text.includes('flood') || text.includes('wire')) {
     severity = 'high';
-  } else if (text.includes('dark') || text.includes('delay') || text.includes('streetlight')) {
+  } else if (text.includes('pothole') || text.includes('light') || text.includes('traffic')) {
     severity = 'medium';
   }
 
   return {
     suggestedSeverity: severity,
     confidenceBoost: 10,
-    safetySummary: 'Report highlights neighborhood physical condition and provides community situational awareness.',
-    isPotentialDuplicate: false,
+    safetySummary: 'Community observation for Pune neighbor awareness.',
+    verificationNotice: 'Local observation only. Stored locally in your browser and not verified by municipal authorities.',
+  };
+}
+
+/**
+ * Multilingual AI Chat Assistant (English, Hindi, Marathi)
+ */
+export async function sendAssistantChatMessage(params: AssistantChatParams): Promise<AssistantChatResponse> {
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: params.message,
+        history: params.history || [],
+        language: params.language || 'en-IN',
+        currentTab: params.currentTab || 'home',
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn('[Assistant Chat API Error, using client fallback]:', err);
+  }
+
+  const isMarathi = params.language === 'mr-IN';
+  const isHindi = params.language === 'hi-IN';
+
+  return {
+    reply: isMarathi 
+      ? 'नमस्कार! मी एक्सप्लोर सिटी असिस्टंट आहे. शनिवार वाडा, एफसी रोडची खाद्यसंस्कृती किंवा पुण्यातील अनुभवांसाठी मी तुम्हाला मदत करू शकेन.'
+      : isHindi
+      ? 'नमस्ते! मैं एक्सप्लोर सिटी पुणे असिस्टेंट हूँ। शनिवार वाडा, एफसी रोड, मिसळ किंवा बजट ट्रिप के बारे में पूछिए!'
+      : 'Namaskar! I am your Explore City Pune Assistant. Ask me about heritage trails, iconic misal spots, or budget adventures under ₹500!',
+    suggestedPrompts: isMarathi
+      ? ['पुण्यातील खाद्यपदार्थ सुचवा', '₹५०० मध्ये १ दिवसाचा प्लॅन', 'शनिवार वाडा माहिती']
+      : isHindi
+      ? ['₹500 में हेरिटेज ट्रिप', 'पुणे में क्या खाएं?', 'शनिवार वाडा का इतिहास']
+      : ['Plan a heritage & food tour under ₹500', 'Best places on FC Road', 'Tell me about Aga Khan Palace'],
+    action: { type: 'none' },
+    sources: [{ name: 'Explore City Pune Knowledge Base', url: 'https://www.google.com/maps/place/Pune,+Maharashtra' }],
+    language: params.language || 'en-IN',
   };
 }

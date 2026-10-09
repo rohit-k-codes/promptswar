@@ -17,6 +17,7 @@ interface Props {
   allReports: CitizenReport[];
   onReportCreated: (newReport: CitizenReport) => void;
   initialCoords?: { lat: number; lng: number };
+  initialDraft?: { title?: string; description?: string; category?: ReportCategory };
 }
 
 export const ReportModal: React.FC<Props> = ({
@@ -25,19 +26,28 @@ export const ReportModal: React.FC<Props> = ({
   allReports,
   onReportCreated,
   initialCoords,
+  initialDraft,
 }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<ReportCategory>('safety_concern');
+  const [title, setTitle] = useState(initialDraft?.title || '');
+  const [description, setDescription] = useState(initialDraft?.description || '');
+  const [category, setCategory] = useState<ReportCategory>(initialDraft?.category || 'safety_concern');
   const [severity, setSeverity] = useState<ReportSeverity>('medium');
-  const [lat, setLat] = useState<number>(initialCoords?.lat || 37.7749);
-  const [lng, setLng] = useState<number>(initialCoords?.lng || -122.4194);
-  const [address, setAddress] = useState('Market St Corridor, San Francisco');
+  const [lat, setLat] = useState<number>(initialCoords?.lat || 18.5204);
+  const [lng, setLng] = useState<number>(initialCoords?.lng || 73.8567);
+  const [address, setAddress] = useState('FC Road / Deccan Gymkhana, Pune');
   const [imageUrl, setImageUrl] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [potentialDuplicates, setPotentialDuplicates] = useState<CitizenReport[]>([]);
+
+  useEffect(() => {
+    if (initialDraft) {
+      if (initialDraft.title) setTitle(initialDraft.title);
+      if (initialDraft.description) setDescription(initialDraft.description);
+      if (initialDraft.category) setCategory(initialDraft.category);
+    }
+  }, [initialDraft]);
 
   useEffect(() => {
     if (initialCoords) {
@@ -311,21 +321,24 @@ export const ReportModal: React.FC<Props> = ({
           </div>
 
           {/* Submit Action */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 text-slate-950 font-bold text-sm shadow-glow-amber hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSubmitting ? (
-                <span>Submitting & Running AI Safety Scan...</span>
+                <span>Analyzing Report via Gemini 3.8 Flash...</span>
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>Publish Report to City Ledger</span>
+                  <span>Save Local Report (Browser Storage Only)</span>
                 </>
               )}
             </button>
+            <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+              🔒 Privacy Notice: Local citizen reports are saved exclusively in your browser's localStorage for neighborhood awareness. They are <strong>unverified</strong> and are <strong>not submitted</strong> to municipal or emergency authorities.
+            </p>
           </div>
 
         </form>

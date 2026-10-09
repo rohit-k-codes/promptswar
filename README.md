@@ -1,158 +1,163 @@
-# Explore City
+# Explore City — Pune Edition
 > **Less Survival Mode. More Adventure.**
-
-![Explore City Platform](public/hero.jpg)
+> Launch City: Pune, Maharashtra, India (18.5204° N, 73.8567° E)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.x-cyan.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-emerald.svg)](https://tailwindcss.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20RLS-3ECF8E.svg)](https://supabase.com)
-[![Google Maps](https://img.shields.io/badge/Google%20Maps-Places%20%26%20Routes-4285F4.svg)](https://cloud.google.com/maps-platform)
+[![Leaflet](https://img.shields.io/badge/Map-Leaflet%20%2B%20OpenStreetMap-10b981.svg)](https://leafletjs.com/)
 [![Gemini AI](https://img.shields.io/badge/Gemini%20API-gemini--3.8--flash-8E24AA.svg)](https://ai.google.dev/)
+[![Zero Paid APIs](https://img.shields.io/badge/Zero%20Paid%20APIs-Single%20Gemini%20Key-amber.svg)](#)
 
 ---
 
-## 🌟 Overview & Product Goal
+## 🌟 Overview & Architecture
 
-**Explore City** is a production-minded, responsive urban intelligence and exploration platform designed to help people stop merely surviving the city and start genuinely enjoying it. By uniting verified geospatial discovery, transparent crowd-sourced municipal condition reports, real-time weather adaptations, and Gemini 3.8 Flash neural itinerary synthesis, Explore City transforms urban navigation into an evidence-based adventure.
+**Explore City — Pune Edition** is a production-quality urban discovery and civic intelligence platform built to help citizens and travelers stop merely surviving city life and start enjoying it through local Pune discoveries, Peshwa heritage, iconic food corridors, and practical urban insights.
+
+### 🔑 Single Gemini API Key Architecture
+- **Zero Paid APIs Required**: The only external credential required is `GEMINI_API_KEY`.
+- **Backend-Only Security**: `GEMINI_API_KEY` stays exclusively on the Express backend (`server/`). It is never exposed in client bundles or `VITE_` variables.
+- **Keyless Mapping**: Uses **Leaflet** with **OpenStreetMap** tiles. No Google Maps JavaScript API keys required.
+- **Keyless Meteorology**: Uses **Open-Meteo** free meteorological data and Pune climatological models. No Weather API keys required.
+- **No Database**: All database dependencies (Supabase clients, migrations, external cloud databases) have been removed. Uses versioned browser `localStorage` for private, local-first persistence.
+- **Ethical AI & Grounding**: Distinguishes grounded knowledge from AI suggestions and unverified user reports. Citizen reports remain strictly local to the user's browser.
 
 ---
 
-## ✨ Core Features
+## ✨ Features
 
-1. **Interactive City Map Explorer**:
-   - Categorized discovery across Dining, Heritage Sites, Sights, Stays, and Artisanal Cafes.
-   - Live filters by vibe, rating, and keyword search.
-   - Sourced and timestamped place detail drawer with verified Google Places ratings, hours, and safety metrics.
+### 1. 🗺️ Google-Maps-Free Keyless Map Experience (Leaflet + OpenStreetMap)
+- Interactive map centered on Pune (`18.5204, 73.8567`) with pan, zoom, and OpenStreetMap attribution.
+- Synchronized map markers and sidebar list view for 12 authentic Pune landmarks.
+- Markers appear only when reliable coordinates exist.
+- Clickable popups with place details, ratings, OpenStreetMap links, and external Google Maps directions links.
+- Graceful offline banner if map tiles are slow or offline.
 
-2. **AI Urban Adventure Planner (Gemini 3.8 Flash)**:
-   - Dynamic itinerary synthesis based on budget tier (`Budget $`, `Standard $$`, `Premium $$$$`, `Free Spirit`), duration (2 to 12 hours), mobility preferences, and live weather.
-   - Produces structured schedules with step durations, transparent neighborhood safety tips, and estimated costs.
-   - Offline and local synthesis fallback ensuring uninterrupted demo availability.
+### 2. 🏛️ Pune City Exploration & Discovery Dashboard
+- Authentic curated places: Shaniwar Wada, Aga Khan Palace, Goodluck Cafe, Vaishali, Pataleshwar Cave Temple, The Ritz-Carlton, Vohuman Cafe, Osho Teerth Park, Bedekar Misal, Kayani Bakery, Raja Dinkar Kelkar Museum, and Conrad Pune.
+- Category filters: Heritage & Forts, Iconic Cafes & Bakeries, Maharashtrian Restaurants, Parks & Zen Gardens, Luxury Stays.
+- Natural-language keyword search matching tags, addresses, and cultural notes.
 
-3. **Google Places & Routes Integration**:
-   - Google Places Platform integration for authentic place data, ratings, photos, and opening hours.
-   - Traffic-aware travel estimates (Routes API / Directions) supporting Walking, Cycling (protected track awareness), Transit, and Driving with congestion multipliers.
+### 3. 🤖 Multilingual "Explore City Assistant" (AI Voice & Chat)
+- Accessible floating assistant button on bottom-right of the screen.
+- Supported languages:
+  1. **English** (`en-IN`)
+  2. **Hindi** (`hi-IN`) — स्वाभाविक हिंदी में वार्तालाप
+  3. **Marathi** (`mr-IN`) — अस्खलित मराठीत स्थानिक पुणेरी संवाद
+- **Voice Input**: Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) with mic toggle, listening indicator, and editable transcripts before sending.
+- **Voice Output**: Browser-native `speechSynthesis` (`SpeechSynthesisUtterance`) with Speak, Stop, and Mute controls. Autoplay is OFF by default.
+- **Application Actions**: Assistant can automatically navigate tabs, filter place categories, search Pune spots, and open citizen report drafts.
 
-4. **Weather-Calibrated Recommendations**:
-   - Live meteorological indicators: Temperature (C/F), outdoor exploration score (0-100%), precipitation probability, and UV index.
-   - Adapts trip recommendations dynamically (e.g. suggests indoor heritage galleries during rain, scenic hill vistas during golden hour).
+### 4. 🧭 Personalized Adventure Planner (INR Budget)
+- Calibrated for Indian Rupees (₹500, ₹1,500, ₹3,500, or custom INR budget).
+- Custom exploration duration (2 to 12 hours), travel style, and accessibility needs.
+- Structured itinerary with stop duration, cost estimate in INR, local Pune navigation tips, and transparent safety advice.
+- Explicit user confirmation modal before saving itineraries to local browser storage.
 
-5. **Citizen Reports & Civic Participation**:
-   - Multi-modal incident submission: Text, photographic preview, and voice dictation via the **Web Speech API**.
-   - Categories: Broken streetlights, road potholes, transit delays, crowd surges, festival pop-ups, and heritage access tips.
-   - Algorithmic duplicate detection: Automatically clusters reports submitted within 200m sharing the same category.
+### 5. ⚖️ Place Comparison Matrix
+- Side-by-side comparison of 2–3 destinations with objective metrics: ratings, price level, safety index, walkability, and cleanliness.
+- Missing metrics explicitly displayed as "Not available" without hallucinated statistics.
 
-6. **Evidence-Based Safety & Place Comparison Matrix**:
-   - Side-by-side comparison of 2-3 locations with dynamic badges (*Top Rated*, *Safest*, *Most Walkable*, *Top Accessible*).
-   - Clear distinction across:
-     - 🏛️ **Official Google Places**
-     - 👥 **Verified Community Reports**
-     - ⏳ **Pending Moderation Reports**
-     - 🧪 **Simulated Demo Data**
-
-7. **Admin Moderation Desk & City Insights**:
-   - Role-Based Access Control (RBAC): `explorer`, `moderator`, and `admin`.
-   - Review incoming queue, one-click Approve (awards +15 reputation points to citizen), Reject, or Mark Resolved.
-   - City incident category analytics and real-time resolution metrics.
-
-8. **User Profiles & Saved Pocket**:
-   - Reputation points and explorer badge progression (*Rookie Explorer* → *Pathfinder* → *City Scout* → *Urban Legend* → *Civic Architect*).
-   - Saved bookmarks and custom AI itineraries.
+### 6. 🛡️ Citizen Reports & Local Watch
+- Log localized street hazards (potholes, waterlogging, streetlights) with category, description, and coordinates.
+- Gemini AI summarization and severity classification with user confirmation.
+- Strictly local to the user's browser: never claimed to be shared with municipal authorities or other users without consent.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies |
-|---|---|
-| **Frontend** | React 19, TypeScript, Tailwind CSS, Vite 8, Lucide React Icons |
-| **Database & Auth** | Supabase Cloud PostgreSQL, Row-Level Security (RLS), Supabase Auth |
-| **Media Storage** | Supabase Storage (citizen report photos and audio) |
-| **Serverless Edge** | Supabase Edge Functions (`Deno`) for privileged API endpoints |
-| **Geospatial & Mapping** | Google Maps JavaScript API, Places API (New), Routes API |
-| **AI Intelligence** | Gemini 3.8 Flash (`@google/genai` SDK) |
-| **Speech-to-Text** | Web Speech API (`webkitSpeechRecognition`) |
+| Component | Technology | Description |
+|---|---|---|
+| **Frontend** | React 19, TypeScript, Tailwind CSS, Vite 8, Lucide Icons | Responsive glassmorphism interface |
+| **Backend** | Express 5, Node.js (ESM), CORS, Dotenv | Secure Gemini proxy with rate limiting & timeouts |
+| **AI Model** | Google Gemini 3.8 Flash (`@google/genai` SDK) | Fast multimodal planning and multilingual chat |
+| **Mapping** | Leaflet 1.9 + OpenStreetMap | Free, keyless interactive map |
+| **Weather** | Open-Meteo API + Pune Climatological Model | Free keyless meteorological feed |
+| **Voice** | Browser Web Speech API (`SpeechRecognition` & `speechSynthesis`) | Browser-native voice input and audio response |
+| **Storage** | Versioned browser `localStorage` (`storageService.ts`) | Zero database dependency |
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Quick Start & Setup
 
 ### Prerequisites
 - Node.js >= 20.x or 24.x LTS
 - npm >= 10.x
+- Single Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
-### 1. Clone & Install
+### 1. Install Dependencies
 ```bash
-git clone https://github.com/your-username/explore-city.git
-cd explore-city
 npm install
 ```
 
-### 2. Configure Environment Variables
-Copy the example configuration:
-```bash
-cp .env.example .env
-```
-Fill in your credentials or run directly with default demo keys:
+### 2. Configure Environment (`.env`)
+Create a `.env` file in the project root:
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
-VITE_GEMINI_API_KEY=your-gemini-api-key
-VITE_WEATHER_API_KEY=your-weather-api-key
+# Only ONE API key required
+GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_MODEL=gemini-3.8-flash
+PORT=3001
 ```
 
-### 3. Run Development Server
+*(Note: `.env` is excluded from Git in `.gitignore` to protect your secret key).*
+
+### 3. Run Backend API Server
+```bash
+npm run server
+```
+Server starts on `http://localhost:3001`.
+
+### 4. Run Frontend (Vite)
+In another terminal:
 ```bash
 npm run dev
 ```
-Open your browser at `http://localhost:5173`.
+Open `http://localhost:5173` in your browser.
 
-### 4. Run Tests & Build Production Bundle
+---
+
+## 🧪 Testing & Verification
+
+Run the full test suite (18 tests covering Haversine distance, duplicate detection, confidence scoring, badges, and all 14 Express API endpoints including multilingual chat):
+
 ```bash
-# Run unit & algorithmic tests
 npm test
+```
 
-# Build production bundle with TypeScript validation
+Build the production bundle:
+```bash
 npm run build
 ```
 
 ---
 
-## 🗄️ Database Schema & Migrations
+## 📜 API Endpoints Summary
 
-Explore City includes full version-controlled database migrations with strict Row Level Security (RLS) located in:
-- [`supabase/migrations/20261009000000_explore_city_schema.sql`](supabase/migrations/20261009000000_explore_city_schema.sql)
-- [`supabase/seed.sql`](supabase/seed.sql)
-
-### Tables
-- `profiles`: User roles (`explorer`, `moderator`, `admin`), badges, and reputation scores.
-- `citizen_reports`: Geotagged civic reports with coordinates, status (`pending`, `approved`, `rejected`), confidence scores, and audio transcripts.
-- `report_votes`: Community upvotes and verification checks.
-- `saved_places`: User bookmarks with custom notes.
-- `itineraries`: Saved AI itineraries with step-by-step timetable schedules.
-- `place_metrics`: Sourced and timestamped comparison metrics.
-
----
-
-## 🛡️ Edge Functions
-
-Serverless Edge Functions in `supabase/functions/`:
-- `gemini-trip-planner`: Secure server-side Gemini 3.8 Flash generation of structured itineraries.
-- `analyze-citizen-report`: AI-powered severity suggestion, duplicate similarity, and safety summarization.
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/health` | `GET` | Health check and Pune edition status |
+| `/api/config-status` | `GET` | Configuration flags (safely hides secrets) |
+| `/api/places/search` | `GET` | Search and filter Pune places |
+| `/api/places/details` | `GET` | Retrieve single place details |
+| `/api/routes/compute` | `POST` | Calculate travel route & Google Maps directions |
+| `/api/weather/current` | `GET` | Live Pune weather via Open-Meteo |
+| `/api/weather/forecast`| `GET` | Multi-day Pune forecast |
+| `/api/ai/plan` | `POST` | Generate INR adventure itinerary with Gemini |
+| `/api/ai/analyze-report`| `POST` | Analyze citizen report locally |
+| `/api/ai/chat` | `POST` | Multilingual assistant (English, Hindi, Marathi) |
 
 ---
 
-## 👥 Personas & Demo RBAC
-
-For rapid hackathon demonstration, click the profile avatar in the upper right navigation to switch between test personas:
-1. **Elena Rostova** (`explorer`): Can explore, save itineraries, bookmark places, and submit citizen reports.
-2. **Marcus Vance** (`moderator`): Can access the Admin Desk, approve/reject reports, and resolve issues.
-3. **Aria Chen** (`admin`): Full civic administrative privileges and analytics audit oversight.
+## 🔒 Security & Privacy Commitments
+- `GEMINI_API_KEY` is strictly confined to the backend server.
+- No database credentials, connection strings, or cloud storage credentials exist in the codebase.
+- Citizen reports remain local to the user's browser.
+- Transparent attribution for OpenStreetMap and Google Maps directions links.
+- Respects eligible Gemini free tier limits with rate limiting and local synthesizers when quotas are reached.
 
 ---
 
-## 📄 License
-This project is licensed under the MIT License.
+© 2026 Explore City · Pune Edition · Single Gemini API Key Architecture

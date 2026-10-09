@@ -1,5 +1,5 @@
 import { CitizenReport, ReportCategory, ReportSeverity, ReportStatus } from '../types';
-import { supabase, isSupabaseConfigured, localDb } from './supabaseClient';
+import { localDb } from './storageService';
 import { getDistanceKm } from './routesService';
 import { analyzeCitizenReportAI } from './geminiService';
 
@@ -32,21 +32,7 @@ export function findPotentialDuplicates(
 }
 
 export async function getCitizenReports(): Promise<CitizenReport[]> {
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('citizen_reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        return data as CitizenReport[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetch failed, using local storage reports', e);
-    }
-  }
-
+  // Local browser-only persistence (versioned localStorage)
   return localDb.getReports();
 }
 
@@ -57,7 +43,7 @@ export async function submitCitizenReport(input: CreateReportInput): Promise<{
   const existingReports = await getCitizenReports();
   const duplicates = findPotentialDuplicates(input.lat, input.lng, input.category, existingReports);
 
-  // Run AI analysis
+  // Run AI analysis via backend Gemini proxy
   const aiAnalysis = await analyzeCitizenReportAI(input);
 
   const newReport: CitizenReport = {
@@ -67,14 +53,14 @@ export async function submitCitizenReport(input: CreateReportInput): Promise<{
     title: input.title,
     description: input.description,
     category: input.category,
-    severity: input.severity || aiAnalysis.suggestedSeverity,
+    severity: input.severity || (aiAnalysis.suggestedSeverity as ReportSeverity),
     status: 'pending',
     lat: input.lat,
     lng: input.lng,
     address: input.address || `${input.lat.toFixed(4)}, ${input.lng.toFixed(4)}`,
     image_url: input.image_url,
     voice_transcript: input.voice_transcript,
-    confidence_score: 55 + aiAnalysis.confidenceBoost,
+    confidence_score: 55 + (aiAnalysis.confidenceBoost || 10),
     upvotes: 1,
     user_has_voted: true,
     duplicate_of: duplicates.length > 0 ? duplicates[0].id : null,
@@ -82,28 +68,7 @@ export async function submitCitizenReport(input: CreateReportInput): Promise<{
     created_at: new Date().toISOString(),
   };
 
-  if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from('citizen_reports').insert([{
-        title: newReport.title,
-        description: newReport.description,
-        category: newReport.category,
-        severity: newReport.severity,
-        status: newReport.status,
-        lat: newReport.lat,
-        lng: newReport.lng,
-        address: newReport.address,
-        image_url: newReport.image_url,
-        voice_transcript: newReport.voice_transcript,
-        confidence_score: newReport.confidence_score,
-        data_source: 'citizen_community',
-      }]);
-    } catch (e) {
-      console.warn('Supabase insert error, persisting locally', e);
-    }
-  }
-
-  // Persist locally
+  // Persist strictly to browser localStorage
   const updated = [newReport, ...existingReports];
   localDb.saveReports(updated);
 
@@ -157,21 +122,6 @@ export async function moderateReport(
 
   reports[index] = updated;
   localDb.saveReports(reports);
-
-  if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase
-        .from('citizen_reports')
-        .update({
-          status: newStatus,
-          moderation_note: updated.moderation_note,
-          moderated_at: updated.moderated_at
-        })
-        .eq('id', reportId);
-    } catch (e) {
-      console.warn('Supabase moderation update error', e);
-    }
-  }
 
   return updated;
 }

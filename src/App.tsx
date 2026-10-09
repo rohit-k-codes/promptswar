@@ -4,24 +4,31 @@ import {
   Place, 
   CitizenReport, 
   Itinerary, 
-  WeatherData 
+  WeatherData,
+  NavigationPage
 } from './types';
-import { localDb } from './services/supabaseClient';
+import { localDb } from './services/storageService';
 import { CURATED_PLACES } from './services/placesService';
 import { getCitizenReports, voteOnReport } from './services/citizenReportService';
 import { fetchCurrentWeather } from './services/weatherService';
 import { Navbar } from './components/Navbar';
+import { HomeDashboard } from './components/HomeDashboard';
 import { InteractiveMap } from './components/InteractiveMap';
+import { PlacesDirectoryPage } from './components/PlacesDirectoryPage';
 import { TripPlannerView } from './components/TripPlannerView';
-import { CitizenReportsHub } from './components/CitizenReportsHub';
 import { PlaceComparisonMatrix } from './components/PlaceComparisonMatrix';
+import { CitizenReportsHub } from './components/CitizenReportsHub';
+import { CityInsightsDashboard } from './components/CityInsightsDashboard';
+import { SavedAdventuresPage } from './components/SavedAdventuresPage';
+import { UserProfilePage } from './components/UserProfilePage';
 import { AdminModerationDesk } from './components/AdminModerationDesk';
-import { UserProfileAndSaved } from './components/UserProfileAndSaved';
 import { ReportModal } from './components/ReportModal';
+import { AuthModal } from './components/AuthModal';
+import { ExploreCityAssistant } from './components/ExploreCityAssistant';
 import { Footer } from './components/Footer';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'map' | 'planner' | 'reports' | 'compare' | 'admin' | 'profile'>('map');
+  const [activeTab, setActiveTab] = useState<NavigationPage>('home');
   const [currentUser, setCurrentUser] = useState<UserProfile>(localDb.getUser());
   const [places, setPlaces] = useState<Place[]>(CURATED_PLACES);
   const [citizenReports, setCitizenReports] = useState<CitizenReport[]>([]);
@@ -31,7 +38,7 @@ export function App() {
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
   const [savedItineraries, setSavedItineraries] = useState<Itinerary[]>(localDb.getItineraries());
   
-  // Comparison slots (default with 2 interesting destinations)
+  // Comparison slots (default with 2 initial destinations for immediate comparison utility)
   const [comparisonPlaces, setComparisonPlaces] = useState<Place[]>([CURATED_PLACES[0], CURATED_PLACES[2]]);
 
   // Selected Place for Map Detail Drawer
@@ -40,6 +47,11 @@ export function App() {
   // Report submission modal state
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportInitialCoords, setReportInitialCoords] = useState<{ lat: number; lng: number } | undefined>();
+  const [reportInitialDraft, setReportInitialDraft] = useState<{ title?: string; description?: string; category?: any } | undefined>();
+
+  // Auth modal state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
   // Initial Data Load
   useEffect(() => {
@@ -57,7 +69,7 @@ export function App() {
     if (matched.length > 0) {
       setSavedPlaces(matched);
     } else {
-      // Default sample bookmark for immediate satisfaction
+      // Default sample bookmarks for instant demonstration
       setSavedPlaces([CURATED_PLACES[0], CURATED_PLACES[1]]);
     }
   }, []);
@@ -167,6 +179,11 @@ export function App() {
     setReportModalOpen(true);
   };
 
+  const handleOpenAuthModal = (mode: 'login' | 'signup' = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
   const pendingReportsCount = citizenReports.filter(r => r.status === 'pending').length;
 
   return (
@@ -181,11 +198,27 @@ export function App() {
         weather={weather}
         savedCount={savedPlaces.length + savedItineraries.length}
         pendingReportsCount={pendingReportsCount}
+        onOpenAuthModal={handleOpenAuthModal}
       />
 
       {/* Main Dynamic View */}
       <main className="flex-1">
-        {activeTab === 'map' && (
+        {activeTab === 'home' && (
+          <HomeDashboard
+            weather={weather}
+            places={places}
+            reports={citizenReports}
+            onNavigate={setActiveTab}
+            onSelectPlace={(place) => {
+              setSelectedPlace(place);
+              setActiveTab('explore');
+            }}
+            onBookmarkPlace={handleBookmarkPlace}
+            isBookmarked={isBookmarked}
+          />
+        )}
+
+        {activeTab === 'explore' && (
           <InteractiveMap
             places={places}
             citizenReports={citizenReports}
@@ -198,11 +231,35 @@ export function App() {
           />
         )}
 
+        {activeTab === 'places' && (
+          <PlacesDirectoryPage
+            places={places}
+            onSelectPlace={(place) => {
+              setSelectedPlace(place);
+              setActiveTab('explore');
+            }}
+            onBookmarkPlace={handleBookmarkPlace}
+            isBookmarked={isBookmarked}
+            onAddToCompare={handleAddToCompare}
+            onNavigate={setActiveTab}
+          />
+        )}
+
         {activeTab === 'planner' && weather && (
           <TripPlannerView
             weather={weather}
             onSaveItinerary={handleSaveItinerary}
             isSaved={(id) => savedItineraries.some(i => i.id === id)}
+          />
+        )}
+
+        {activeTab === 'compare' && (
+          <PlaceComparisonMatrix
+            comparisonPlaces={comparisonPlaces}
+            allPlaces={places}
+            onRemoveFromCompare={handleRemoveFromCompare}
+            onAddToCompare={handleAddToCompare}
+            onClearCompare={() => setComparisonPlaces([])}
           />
         )}
 
@@ -217,13 +274,36 @@ export function App() {
           />
         )}
 
-        {activeTab === 'compare' && (
-          <PlaceComparisonMatrix
-            comparisonPlaces={comparisonPlaces}
-            allPlaces={places}
-            onRemoveFromCompare={handleRemoveFromCompare}
-            onAddToCompare={handleAddToCompare}
-            onClearCompare={() => setComparisonPlaces([])}
+        {activeTab === 'insights' && (
+          <CityInsightsDashboard
+            reports={citizenReports}
+            places={places}
+          />
+        )}
+
+        {activeTab === 'saved' && (
+          <SavedAdventuresPage
+            savedPlaces={savedPlaces}
+            savedItineraries={savedItineraries}
+            onRemoveSavedPlace={handleRemoveSavedPlace}
+            onRemoveItinerary={handleRemoveItinerary}
+            onSelectPlace={(place) => {
+              setSelectedPlace(place);
+              setActiveTab('explore');
+            }}
+            onNavigate={setActiveTab}
+          />
+        )}
+
+        {activeTab === 'profile' && (
+          <UserProfilePage
+            currentUser={currentUser}
+            onUpdateUser={handleSetCurrentUser}
+            userReports={citizenReports.filter(r => r.user_id === currentUser.id)}
+            savedPlacesCount={savedPlaces.length}
+            savedItinerariesCount={savedItineraries.length}
+            onNavigate={setActiveTab}
+            onOpenAuthModal={() => handleOpenAuthModal('login')}
           />
         )}
 
@@ -234,30 +314,40 @@ export function App() {
             onReportUpdated={handleReportUpdated}
           />
         )}
-
-        {activeTab === 'profile' && (
-          <UserProfileAndSaved
-            currentUser={currentUser}
-            savedPlaces={savedPlaces}
-            savedItineraries={savedItineraries}
-            userReports={citizenReports.filter(r => r.user_id === currentUser.id)}
-            onRemoveSavedPlace={handleRemoveSavedPlace}
-            onRemoveItinerary={handleRemoveItinerary}
-            onViewPlaceOnMap={(place) => {
-              setSelectedPlace(place);
-              setActiveTab('map');
-            }}
-          />
-        )}
       </main>
 
       {/* Citizen Report Creation Modal */}
       <ReportModal
         isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
+        onClose={() => {
+          setReportModalOpen(false);
+          setReportInitialDraft(undefined);
+        }}
         allReports={citizenReports}
         onReportCreated={handleReportCreated}
         initialCoords={reportInitialCoords}
+        initialDraft={reportInitialDraft}
+      />
+
+      {/* Auth (Login / Sign Up) Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          handleSetCurrentUser(user);
+          setAuthModalOpen(false);
+        }}
+        initialMode={authModalMode}
+      />
+
+      {/* Multilingual Voice AI Assistant (Explore City Assistant — English, Hindi, Marathi) */}
+      <ExploreCityAssistant
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenReportDraft={(draft) => {
+          setReportInitialDraft(draft);
+          setReportModalOpen(true);
+        }}
       />
 
       {/* Global Footer */}
